@@ -23,16 +23,16 @@ import sttp.model.HttpVersion
 
 trait SpanAttributes { self =>
 
-  def requestAttributes(request: Request[_, _]): Attributes
+  def requestAttributes(request: Request[?, ?]): Attributes
 
-  def responseAttributes(response: Response[_]): Attributes
+  def responseAttributes(response: Response[?]): Attributes
 
   final def and(that: SpanAttributes): SpanAttributes =
     new SpanAttributes {
-      def requestAttributes(request: Request[_, _]): Attributes =
+      def requestAttributes(request: Request[?, ?]): Attributes =
         self.requestAttributes(request) ++ that.requestAttributes(request)
 
-      def responseAttributes(response: Response[_]): Attributes =
+      def responseAttributes(response: Response[?]): Attributes =
         self.responseAttributes(response) ++ that.responseAttributes(response)
     }
 }
@@ -168,7 +168,7 @@ object SpanAttributes {
   ): SpanAttributes =
     new SpanAttributes {
 
-      def requestAttributes(request: Request[_, _]): Attributes = {
+      def requestAttributes(request: Request[?, ?]): Attributes = {
         val b = Attributes.newBuilder
 
         b += HttpAttributes.HttpRequestMethod(request.method.method)
@@ -202,7 +202,7 @@ object SpanAttributes {
         b.result()
       }
 
-      def responseAttributes(response: Response[_]): Attributes = {
+      def responseAttributes(response: Response[?]): Attributes = {
         val b = Attributes.newBuilder
 
         if (!response.code.isSuccess) {

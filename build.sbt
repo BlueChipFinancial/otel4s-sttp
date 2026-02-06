@@ -24,17 +24,16 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
 )
 
 val Versions = new {
-  val Scala213        = "2.13.16"
-  val Scala3          = "3.3.3"
-  val CatsEffect      = "3.6.0-RC1"
-  val Otel4s          = "0.12.0-RC2"
-  val Sttp            = "3.10.2"
-  val Munit           = "1.0.0"
-  val MUnitCatsEffect = "2.0.0"
+  val Scala3          = "3.3.7"
+  val CatsEffect      = "3.+"
+  val Otel4s          = "0.+"
+  val Sttp            = "3.+"
+  val Munit           = "1.+"
+  val MUnitCatsEffect = "2.+"
 }
 
-ThisBuild / crossScalaVersions := Seq(Versions.Scala213, Versions.Scala3)
-ThisBuild / scalaVersion       := Versions.Scala213 // the default Scala
+ThisBuild / crossScalaVersions := Seq(Versions.Scala3)
+ThisBuild / scalaVersion       := Versions.Scala3 // the default Scala
 
 lazy val munitDependencies = Def.settings(
   libraryDependencies ++= Seq(

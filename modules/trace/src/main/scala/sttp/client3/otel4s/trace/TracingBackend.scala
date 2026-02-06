@@ -71,7 +71,7 @@ object TracingBackend {
       spanNameSelector: SpanNameSelector = SpanNameSelector.default(UriTemplateClassifier.none),
       spanAttributes: SpanAttributes = SpanAttributes.default,
   ): F[SttpBackend[F, P]] =
-    TracerProvider[F].tracer("sttp.client3").withVersion(BuildInfo.version).get.map { implicit tracer =>
+    TracerProvider[F].tracer("sttp.client3").withVersion(BuildInfo.version).get.flatMap { implicit tracer =>
       usingTracer(delegate, spanNameSelector, spanAttributes)
     }
 
@@ -79,13 +79,12 @@ object TracingBackend {
       delegate: SttpBackend[F, P],
       spanNameSelector: SpanNameSelector = SpanNameSelector.default(UriTemplateClassifier.none),
       spanAttributes: SpanAttributes = SpanAttributes.default,
-  ): SttpBackend[F, P] =
-    if (Tracer[F].meta.isEnabled) {
-      new FollowRedirectsBackend(
-        new TracingBackend[F, P](spanNameSelector, spanAttributes, delegate)
-      )
-    } else {
-      delegate
+  ): F[SttpBackend[F, P]] =
+    Tracer[F].meta.isEnabled.map { enabled =>
+      if (enabled)
+        new FollowRedirectsBackend(
+          new TracingBackend[F, P](spanNameSelector, spanAttributes, delegate)
+        )
+      else delegate
     }
-
 }
