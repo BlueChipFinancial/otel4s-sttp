@@ -114,14 +114,14 @@ object MetricsBackend {
       responseBodySize: Histogram[F, Long],
       activeRequests: UpDownCounter[F, Long]
   ) extends RequestListener[F, State] {
-    def beforeRequest(request: Request[_, _]): F[State] =
+    def beforeRequest(request: Request[?, ?]): F[State] =
       for {
         start <- Clock[F].realTime
         attributes <- Monad[F].pure(activeRequestAttributes(request))
         _ <- activeRequests.inc(attributes)
       } yield State(start, attributes)
 
-    def requestException(request: Request[_, _], state: State, e: Exception): F[Unit] =
+    def requestException(request: Request[?, ?], state: State, e: Exception): F[Unit] =
       HttpError.find(e) match {
         case Some(HttpError(body, statusCode)) =>
           requestSuccessful(
@@ -140,7 +140,7 @@ object MetricsBackend {
           } yield ()
       }
 
-    def requestSuccessful(request: Request[_, _], response: Response[_], state: State): F[Unit] =
+    def requestSuccessful(request: Request[?, ?], response: Response[?], state: State): F[Unit] =
       for {
         now <- Clock[F].realTime
         attributes <- Monad[F].pure(fullAttributes(request, response))
@@ -150,7 +150,7 @@ object MetricsBackend {
         _ <- activeRequests.dec(state.activeRequestsAttributes)
       } yield ()
 
-    private def activeRequestAttributes(request: Request[_, _]): Attributes = {
+    private def activeRequestAttributes(request: Request[?, ?]): Attributes = {
       val b = Attributes.newBuilder
 
       b += HttpAttributes.HttpRequestMethod(request.method.method)
@@ -161,7 +161,7 @@ object MetricsBackend {
       b.result()
     }
 
-    private def fullAttributes(request: Request[_, _], response: Response[_]): Attributes =
+    private def fullAttributes(request: Request[?, ?], response: Response[?]): Attributes =
       fullAttributes(
         request,
         Some(response.code),
@@ -169,7 +169,7 @@ object MetricsBackend {
       )
 
     private def fullAttributes(
-        request: Request[_, _],
+        request: Request[?, ?],
         responseStatusCode: Option[StatusCode],
         errorType: Option[String]
     ): Attributes = {

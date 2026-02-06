@@ -19,15 +19,16 @@ package sttp.client3.otel4s.trace
 import cats.effect.IO
 import cats.effect.testkit.TestControl
 import munit.CatsEffectSuite
+import org.typelevel.otel4s.sdk.data.LimitedData
 import org.typelevel.otel4s.{Attribute, Attributes}
 import org.typelevel.otel4s.sdk.testkit.trace.TracesTestkit
 import org.typelevel.otel4s.sdk.trace.context.propagation.W3CTraceContextPropagator
-import org.typelevel.otel4s.sdk.trace.data.{EventData, LimitedData, StatusData}
+import org.typelevel.otel4s.sdk.trace.data.{EventData, StatusData}
 import org.typelevel.otel4s.trace.{StatusCode, TracerProvider}
-import sttp.client3._
+import sttp.client3.*
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.testing.SttpBackendStub
-import sttp.model.{StatusCode => HttpStatusCode}
+import sttp.model.StatusCode as HttpStatusCode
 
 import scala.concurrent.duration.Duration
 import scala.util.control.NoStackTrace
@@ -36,7 +37,7 @@ class TracingBackendSuite extends CatsEffectSuite {
 
   test("add tracing headers to the request") {
     TracesTestkit
-      .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+      .inMemory[IO](_.addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default)))
       .use { testkit =>
         implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -61,7 +62,7 @@ class TracingBackendSuite extends CatsEffectSuite {
 
   test("record request/response-specific attributes: 200 OK response") {
     TracesTestkit
-      .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+      .inMemory[IO](_.addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default)))
       .use { testkit =>
         implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -107,7 +108,7 @@ class TracingBackendSuite extends CatsEffectSuite {
 
   test("record request/response-specific attributes: 400 BadRequest response") {
     TracesTestkit
-      .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+      .inMemory[IO](_.addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default)))
       .use { testkit =>
         implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -155,7 +156,9 @@ class TracingBackendSuite extends CatsEffectSuite {
   test("record request/response-specific attributes: runtime error") {
     TestControl.executeEmbed {
       TracesTestkit
-        .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .inMemory[IO](
+          _.addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        )
         .use { testkit =>
           implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -196,8 +199,7 @@ class TracingBackendSuite extends CatsEffectSuite {
             val event = EventData.fromException(
               Duration.Zero,
               Err,
-              LimitedData.attributes(128, 128),
-              escaped = false
+              LimitedData.attributes(128, 128)
             )
 
             assertEquals(response, Left(Err))
